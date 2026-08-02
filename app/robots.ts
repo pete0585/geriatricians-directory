@@ -8,7 +8,27 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin', '/api/', '/claim/'],
+        disallow: ['/admin/', '/api/'],
+      },
+      {
+        userAgent: 'OAI-SearchBot',
+        allow: '/',
+      },
+      {
+        userAgent: 'Claude-SearchBot',
+        allow: '/',
+      },
+      {
+        userAgent: 'PerplexityBot',
+        allow: '/',
+      },
+      {
+        userAgent: 'GPTBot',
+        allow: '/',
+      },
+      {
+        userAgent: 'anthropic-ai',
+        allow: '/',
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
