@@ -1,274 +1,174 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Heart, ShieldCheck, Search, Star, ArrowRight, Video, Home, CheckCircle } from 'lucide-react'
+import { Suspense } from 'react'
+import { Users, MapPin, Star, CheckCircle, ArrowRight, Search } from 'lucide-react'
 import SearchBar from '@/components/SearchBar'
 import ListingCard from '@/components/ListingCard'
-import { getFeaturedListings, getTotalListingCount } from '@/lib/data'
+import { getFeaturedListings, getRecentListings, getTotalCount } from '@/lib/data'
+import { CATEGORIES } from '@/lib/types'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Find a Geriatrician Near You | GeriatricianDirectory.com',
+  title: 'Find a Board-Certified Geriatrician Near You | GeriatricianDirectory.com',
   description:
-    'Find a board-certified geriatrician near you. Search by city, insurance, or specialty. Expert care for older adults.',
+    'Search the most complete directory of board-certified geriatricians in the US. Filter by city, state, specialty, telehealth, and whether they\'re accepting new patients.',
 }
 
-const TOP_CITIES = [
-  { name: 'New York', state: 'NY', slug: 'new-york-ny' },
-  { name: 'Los Angeles', state: 'CA', slug: 'los-angeles-ca' },
-  { name: 'Chicago', state: 'IL', slug: 'chicago-il' },
-  { name: 'Houston', state: 'TX', slug: 'houston-tx' },
-  { name: 'Phoenix', state: 'AZ', slug: 'phoenix-az' },
-  { name: 'Philadelphia', state: 'PA', slug: 'philadelphia-pa' },
-  { name: 'San Antonio', state: 'TX', slug: 'san-antonio-tx' },
-  { name: 'San Diego', state: 'CA', slug: 'san-diego-ca' },
-  { name: 'Dallas', state: 'TX', slug: 'dallas-tx' },
-  { name: 'Jacksonville', state: 'FL', slug: 'jacksonville-fl' },
-  { name: 'Austin', state: 'TX', slug: 'austin-tx' },
-  { name: 'Fort Worth', state: 'TX', slug: 'fort-worth-tx' },
+const STATS = [
+  { icon: Users, value: '7,000+', label: 'US Geriatricians Listed' },
+  { icon: MapPin, value: '50', label: 'States Covered' },
+  { icon: Search, value: '5,400', label: 'Monthly "Near Me" Searches' },
+  { icon: Star, value: '$99/yr', label: 'Verified Listing' },
 ]
 
-const SPECIALTY_HIGHLIGHTS = [
-  { label: 'Memory Care', href: '/listings?specialty=Memory+Care', emoji: '🧠' },
-  { label: 'Dementia & Alzheimer's', href: '/listings?specialty=Dementia+%26+Alzheimer%27s', emoji: '💙' },
-  { label: 'Fall Prevention', href: '/listings?specialty=Fall+Prevention', emoji: '🦺' },
-  { label: 'Polypharmacy', href: '/listings?specialty=Polypharmacy+Management', emoji: '💊' },
-  { label: 'Hospice & Palliative', href: '/listings?specialty=Hospice+%26+Palliative+Care', emoji: '🕊️' },
-  { label: 'Telehealth Available', href: '/listings?telehealth=true', emoji: '💻' },
-]
-
-export default async function HomePage() {
-  const [featured, listingCount] = await Promise.all([
-    getFeaturedListings(6).catch(() => []),
-    getTotalListingCount().catch(() => 0),
+async function HomepageContent() {
+  const [featured, recent, total] = await Promise.all([
+    getFeaturedListings(3),
+    getRecentListings(8),
+    getTotalCount(),
   ])
 
   return (
-    <div>
-      {/* Hero */}
-      <section className="bg-gradient-ivory pt-16 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-sage-50 border border-sage-100 px-4 py-2 text-sm text-sage-600 mb-6">
-            <Heart className="h-4 w-4 fill-sage-300 text-sage-300" />
-            <span>{listingCount > 0 ? `${listingCount.toLocaleString()} geriatricians` : 'Expert geriatricians'} across the US</span>
-          </div>
-
-          <h1 className="font-serif text-4xl font-bold text-charcoal-800 leading-tight sm:text-5xl md:text-6xl text-balance">
-            Find expert care for{' '}
-            <span className="text-sage-500">aging adults</span>
-          </h1>
-
-          <p className="mt-5 text-lg text-charcoal-500 max-w-2xl mx-auto leading-relaxed">
-            Geriatricians specialize in the unique health needs of older adults. Find one who accepts
-            Medicare, offers telehealth, and specializes in what matters most to your family.
-          </p>
-
-          <div className="mt-8 flex justify-center">
-            <SearchBar size="large" />
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-charcoal-400">
-            <span className="flex items-center gap-1.5">
-              <Video className="h-4 w-4 text-sage-400" />
-              Telehealth available
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Home className="h-4 w-4 text-sage-400" />
-              Home visits
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-sage-400" />
-              Medicare accepted
-            </span>
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-rose-400" />
-              Board certified
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* What makes a geriatrician different */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            <div className="text-center p-6">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sage-100 mx-auto mb-4">
-                <ShieldCheck className="h-7 w-7 text-sage-500" />
-              </div>
-              <h3 className="font-serif text-xl font-semibold text-charcoal-700 mb-2">
-                Specialized Training
-              </h3>
-              <p className="text-sm text-charcoal-500 leading-relaxed">
-                Geriatricians complete additional fellowship training in aging medicine — beyond
-                internal medicine or family medicine — to understand how diseases present differently
-                in older adults.
-              </p>
+    <>
+      {/* Stats */}
+      {total > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+          {STATS.map(({ icon: Icon, value, label }, i) => (
+            <div key={i} className="card p-5 text-center">
+              <Icon className="w-5 h-5 text-navy mx-auto mb-2" aria-label={label} />
+              <div className="font-display font-bold text-navy text-xl">{i === 0 ? `${total.toLocaleString()}+` : value}</div>
+              <div className="text-xs text-navy-400 mt-0.5">{label}</div>
             </div>
-
-            <div className="text-center p-6">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 mx-auto mb-4">
-                <Heart className="h-7 w-7 text-rose-400 fill-rose-200" />
-              </div>
-              <h3 className="font-serif text-xl font-semibold text-charcoal-700 mb-2">
-                Whole-Person Care
-              </h3>
-              <p className="text-sm text-charcoal-500 leading-relaxed">
-                They address physical, cognitive, and functional health together — managing complex
-                medication lists, preventing falls, and helping families navigate difficult decisions.
-              </p>
-            </div>
-
-            <div className="text-center p-6">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ivory-200 mx-auto mb-4">
-                <Search className="h-7 w-7 text-charcoal-400" />
-              </div>
-              <h3 className="font-serif text-xl font-semibold text-charcoal-700 mb-2">
-                Free to Search
-              </h3>
-              <p className="text-sm text-charcoal-500 leading-relaxed">
-                No sign-up required. Search by Medicare acceptance, specialty, and location. Find
-                a geriatrician who fits your family's needs — for free.
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
-      </section>
-
-      {/* Browse by specialty */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-ivory-50">
-        <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-10">
-            <h2 className="section-heading">What are you looking for?</h2>
-            <p className="section-subheading">
-              Find a geriatrician who specializes in your loved one's specific needs.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {SPECIALTY_HIGHLIGHTS.map((s) => (
-              <Link
-                key={s.label}
-                href={s.href}
-                className="flex flex-col items-center gap-2 rounded-2xl bg-white p-4 text-center shadow-soft hover:shadow-card transition-shadow group"
-              >
-                <span className="text-2xl">{s.emoji}</span>
-                <span className="text-xs font-semibold text-charcoal-600 group-hover:text-sage-500 transition-colors leading-tight">
-                  {s.label}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      )}
 
       {/* Featured listings */}
       {featured.length > 0 && (
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
-          <div className="mx-auto max-w-7xl">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="section-heading">Featured Geriatricians</h2>
-                <p className="section-subheading">Verified, experienced, and accepting new patients.</p>
-              </div>
-              <Link
-                href="/listings"
-                className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-sage-500 hover:text-sage-600"
-              >
-                View all <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {featured.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} featured />
-              ))}
-            </div>
-
-            <div className="mt-6 text-center sm:hidden">
-              <Link href="/listings" className="btn-secondary">
-                View all Geriatricians <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-display font-bold text-navy text-2xl">Featured Geriatricians</h2>
+            <Link href="/listings?tier=featured" className="text-sm text-navy hover:text-navy-700 flex items-center gap-1">
+              View all <ArrowRight className="w-4 h-4" aria-label="arrow" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {featured.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
           </div>
         </section>
       )}
 
-      {/* Browse by city */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-ivory-50">
-        <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-10">
-            <h2 className="section-heading">Search by City</h2>
-            <p className="section-subheading">Geriatricians serving older adults across the country.</p>
-          </div>
+      {/* Specialty categories */}
+      <section className="mb-16">
+        <h2 className="font-display font-bold text-navy text-2xl mb-6">Browse by Specialty</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {CATEGORIES.map((cat) => (
+            <Link
+              key={cat.slug}
+              href={`/categories/${cat.slug}`}
+              className="card p-5 hover:shadow-card-hover transition-shadow group"
+            >
+              <h3 className="font-display font-semibold text-navy group-hover:text-navy-700 text-sm mb-1">{cat.label}</h3>
+              <p className="text-xs text-navy-400">Find specialists →</p>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {TOP_CITIES.map((city) => (
-              <Link
-                key={city.slug}
-                href={`/find/${city.state.toLowerCase()}/${city.slug}`}
-                className="rounded-xl bg-white px-3 py-3 text-center shadow-soft hover:shadow-card transition-shadow group"
-              >
-                <p className="text-sm font-semibold text-charcoal-700 group-hover:text-sage-500 transition-colors">
-                  {city.name}
-                </p>
-                <p className="text-xs text-charcoal-400 mt-0.5">{city.state}</p>
-              </Link>
+      {/* Recent listings */}
+      {recent.length > 0 && (
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-display font-bold text-navy text-2xl">Recently Added</h2>
+            <Link href="/listings" className="text-sm text-navy hover:text-navy-700 flex items-center gap-1">
+              Browse all <ArrowRight className="w-4 h-4" aria-label="arrow" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {recent.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
+        </section>
+      )}
+    </>
+  )
+}
 
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <Link href="/listings" className="btn-secondary">
-              Browse all geriatricians <ArrowRight className="h-4 w-4" />
-            </Link>
+export default function HomePage() {
+  return (
+    <div className="bg-gradient-hero">
+      {/* Hero */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 bg-navy-50 text-navy text-xs font-semibold px-4 py-1.5 rounded-full mb-5 border border-navy-100">
+            <CheckCircle className="w-3.5 h-3.5 text-sage" aria-label="verified" />
+            The most complete geriatrician directory in the US
           </div>
-        </div>
-      </section>
-
-      {/* For Geriatricians CTA */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-sage-500">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="font-serif text-3xl font-bold text-white mb-4">
-            Are you a geriatrician or geriatric care specialist?
-          </h2>
-          <p className="text-sage-100 text-lg mb-8 leading-relaxed">
-            Get a free listing on the only nationwide directory built for geriatric medicine specialists.
-            Pro listings start at $79/year — one new Medicare patient pays for it many times over.
+          <h1 className="font-display font-extrabold text-navy text-4xl sm:text-5xl lg:text-6xl leading-tight mb-5">
+            Find a Geriatrician Who<br />
+            <span className="text-sage">Specializes in Aging</span>
+          </h1>
+          <p className="text-navy-500 text-lg max-w-2xl mx-auto mb-3">
+            Fewer than 7,000 board-certified geriatricians serve 58 million Americans over 65.
+            We make every one of them findable — by city, specialty, and whether they&apos;re accepting new patients.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/submit"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-semibold text-sage-600 hover:bg-ivory-100 transition-colors"
-            >
-              Get Listed Free
-            </Link>
-            <Link
-              href="/submit#pricing"
-              className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/50 px-8 py-4 text-base font-semibold text-white hover:border-white transition-colors"
-            >
-              View Pricing
-            </Link>
-          </div>
-        </div>
-      </section>
+          <p className="text-navy-400 text-sm max-w-lg mx-auto mb-10">
+            Used by families navigating a parent&apos;s dementia diagnosis, fall risk, or polypharmacy concerns.
+          </p>
 
-      {/* Trust bar */}
-      <section className="py-10 px-4 bg-white border-t border-ivory-200">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-charcoal-400">
-            <span className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-sage-400" />
-              Free to search, always
-            </span>
-            <span className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-rose-400" />
-              Board-certified specialists
-            </span>
-            <span className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-sage-400" />
-              Medicare accepted
-            </span>
+          <div className="max-w-3xl mx-auto">
+            <Suspense>
+              <SearchBar placeholder="Search by doctor name, city, or state..." />
+            </Suspense>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-3 mt-6 text-sm">
+            <Link href="/listings?accepting_new_patients=yes" className="inline-flex items-center gap-1.5 text-navy hover:text-navy-700 font-medium">
+              <span className="w-2 h-2 rounded-full bg-sage inline-block" />
+              Accepting New Patients
+            </Link>
+            <Link href="/listings?telehealth=yes" className="inline-flex items-center gap-1.5 text-navy hover:text-navy-700 font-medium">
+              <span className="w-2 h-2 rounded-full bg-navy-300 inline-block" />
+              Telehealth Available
+            </Link>
+            <Link href="/categories/memory-care" className="inline-flex items-center gap-1.5 text-navy hover:text-navy-700 font-medium">
+              <span className="w-2 h-2 rounded-full bg-gold inline-block" />
+              Memory Care
+            </Link>
+            <Link href="/categories/palliative-care" className="inline-flex items-center gap-1.5 text-navy hover:text-navy-700 font-medium">
+              <span className="w-2 h-2 rounded-full bg-navy-200 inline-block" />
+              Palliative Care
+            </Link>
           </div>
         </div>
-      </section>
+
+        <Suspense fallback={<div className="h-48 animate-pulse bg-navy-50 rounded-xl" />}>
+          <HomepageContent />
+        </Suspense>
+      </div>
+
+      {/* Physician CTA strip */}
+      <div className="bg-navy text-white py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="font-display font-bold text-2xl mb-3">Are you a geriatrician?</h2>
+          <p className="text-navy-200 mb-6 max-w-xl mx-auto text-sm">
+            Your listing may already be here from the NPI registry. Claim it free — takes 2 minutes.
+            7,000 geriatricians for 58 million seniors means every patient who finds you is already looking.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/listings" className="btn-secondary bg-transparent border-white text-white hover:bg-white hover:text-navy">
+              Find My Listing
+            </Link>
+            <Link href="/submit" className="btn-gold">
+              Add My Practice
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

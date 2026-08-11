@@ -1,118 +1,208 @@
-import { createClient } from './supabase/server'
-import type { Listing } from '@/types'
+import { createClient, createStaticClient, createServiceClient } from '@/lib/supabase/server'
+import type { Listing, SearchFilters } from '@/lib/types'
+
+const TABLE = 'geriatrician_listings'
+const PAGE_SIZE = 24
+
+export async function getListings(
+  filters: SearchFilters = {}
+): Promise<{ listings: Listing[]; total: number }> {
+  const supabase = await createClient()
+  const { q, state, city, subspecialty, accepting_new_patients, telehealth, tier, page = 1 } = filters
+  const offset = (page - 1) * PAGE_SIZE
+
+  let query = supabase
+    .from(TABLE)
+    .select('*', { count: 'exact' })
+    .eq('is_active', true)
+    .eq('is_approved', true)
+    .order('listing_tier_rank', { ascending: false })
+    .order('is_abim_certified', { ascending: false })
+    .order('full_name', { ascending: true })
+    .range(offset, offset + PAGE_SIZE - 1)
+
+  if (q) {
+    query = query.or(`full_name.ilike.%${q}%,practice_name.ilike.%${q}%,city.ilike.%${q}%,state.ilike.%${q}%`)
+  }
+  if (state) query = query.eq('state', state.toUpperCase())
+  if (city) query = query.ilike('city', city)
+  if (subspecialty) query = query.contains('subspecialties', [subspecialty])
+  if (accepting_new_patients === 'yes') query = query.eq('is_accepting_new_patients', true)
+  if (telehealth === 'yes') query = query.eq('offers_telehealth', true)
+  if (tier) query = query.eq('listing_tier', tier)
+
+  const { data, count, error } = await query
+  if (error) throw error
+  return { listings: (data as Listing[]) ?? [], total: count ?? 0 }
+}
 
 export async function getListingBySlug(slug: string): Promise<Listing | null> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('geriatricians_listings')
+  const { data, error } = await supabase
+    .from(TABLE)
     .select('*')
     .eq('slug', slug)
-    .eq('status', 'active')
+    .eq('is_active', true)
     .single()
-  return data
+
+  if (error) return null
+  return data as Listing
 }
 
-export async function getListings({
-  state,
-  city,
-  specialty,
-  insurance,
-  visitType,
-  telehealth,
-  acceptingNew,
-  search,
-  tier,
-  page = 1,
-  pageSize = 20,
-}: {
-  state?: string
-  city?: string
-  specialty?: string
-  insurance?: string
-  visitType?: string
-  telehealth?: boolean
-  acceptingNew?: boolean
-  search?: string
-  tier?: string
-  page?: number
-  pageSize?: number
-}): Promise<{ listings: Listing[]; total: number }> {
+export async function getListingById(id: string): Promise<Listing | null> {
   const supabase = await createClient()
-  let query = supabase
-    .from('geriatricians_listings')
-    .select('*', { count: 'exact' })
-    .eq('status', 'active')
-    .order('plan_tier_rank', { ascending: true })
-    .order('name', { ascending: true })
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('id', id)
+    .single()
 
-  if (state) query = query.ilike('state', state)
-  if (city) query = query.ilike('city', city)
-  if (specialty) query = query.contains('specialties', [specialty])
-  if (insurance) query = query.contains('insurance_accepted', [insurance])
-  if (visitType) query = query.contains('visit_types', [visitType])
-  if (telehealth === true) query = query.eq('telehealth', true)
-  if (acceptingNew === true) query = query.eq('accepting_new_clients', true)
-  if (search) query = query.textSearch('search_vector', search, { type: 'websearch' })
-  if (tier) query = query.eq('plan_tier', tier)
-
-  const from = (page - 1) * pageSize
-  const to = from + pageSize - 1
-  query = query.range(from, to)
-
-  const { data, count } = await query
-  return { listings: data ?? [], total: count ?? 0 }
+  if (error) return null
+  return data as Listing
 }
 
 export async function getFeaturedListings(limit = 6): Promise<Listing[]> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('geriatricians_listings')
+  const { data, error } = await supabase
+    .from(TABLE)
     .select('*')
-    .eq('status', 'active')
-    .in('plan_tier', ['verified', 'pro'])
-    .order('plan_tier_rank', { ascending: true })
+    .eq('listing_tier', 'featured')
+    .eq('is_active', true)
+    .eq('is_approved', true)
+    .order('full_name', { ascending: true })
     .limit(limit)
-  return data ?? []
+
+  if (error) return []
+  return (data as Listing[]) ?? []
 }
 
-export async function getListingsByCity(city: string, state: string, limit = 20): Promise<Listing[]> {
+export async function getRecentListings(limit = 8): Promise<Listing[]> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('geriatricians_listings')
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('is_active', true)
+    .eq('is_approved', true)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) return []
+  return (data as Listing[]) ?? []
+}
+
+export async function getListingsBySubspecialty(subspecialty: string, limit = 50): Promise<Listing[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .contains('subspecialties', [subspecialty])
+    .eq('is_active', true)
+    .eq('is_approved', true)
+    .order('listing_tier_rank', { ascending: false })
+    .order('full_name', { ascending: true })
+    .limit(limit)
+
+  if (error) return []
+  return (data as Listing[]) ?? []
+}
+
+export async function getListingsByState(state: string, limit = 50): Promise<Listing[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('state', state.toUpperCase())
+    .eq('is_active', true)
+    .eq('is_approved', true)
+    .order('listing_tier_rank', { ascending: false })
+    .order('full_name', { ascending: true })
+    .limit(limit)
+
+  if (error) return []
+  return (data as Listing[]) ?? []
+}
+
+export async function getListingsByCity(city: string, state: string, limit = 30): Promise<Listing[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from(TABLE)
     .select('*')
     .ilike('city', city)
-    .ilike('state', state)
-    .eq('status', 'active')
-    .order('plan_tier_rank', { ascending: true })
+    .eq('state', state.toUpperCase())
+    .eq('is_active', true)
+    .eq('is_approved', true)
+    .order('listing_tier_rank', { ascending: false })
+    .order('full_name', { ascending: true })
     .limit(limit)
-  return data ?? []
+
+  if (error) return []
+  return (data as Listing[]) ?? []
 }
 
-export async function getTotalListingCount(): Promise<number> {
+export async function getTotalCount(): Promise<number> {
   const supabase = await createClient()
-  const { count } = await supabase
-    .from('geriatricians_listings')
+  const { count, error } = await supabase
+    .from(TABLE)
     .select('*', { count: 'exact', head: true })
-    .eq('status', 'active')
+    .eq('is_active', true)
+    .eq('is_approved', true)
+
+  if (error) return 0
   return count ?? 0
 }
 
-export async function getActiveStates(): Promise<string[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('geriatricians_listings')
+export async function getStateCounts(): Promise<{ state: string; count: number }[]> {
+  const supabase = createStaticClient()
+  const { data, error } = await supabase
+    .from(TABLE)
     .select('state')
-    .eq('status', 'active')
-  const states = Array.from(new Set((data ?? []).map((r: { state: string }) => r.state))).sort()
-  return states
+    .eq('is_active', true)
+    .eq('is_approved', true)
+
+  if (error || !data) return []
+
+  const counts: Record<string, number> = {}
+  for (const row of data) {
+    counts[row.state] = (counts[row.state] ?? 0) + 1
+  }
+
+  return Object.entries(counts)
+    .map(([state, count]) => ({ state, count }))
+    .sort((a, b) => b.count - a.count)
 }
 
-export async function getListingCountByState(state: string): Promise<number> {
-  const supabase = await createClient()
-  const { count } = await supabase
-    .from('geriatricians_listings')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'active')
-    .ilike('state', state)
-  return count ?? 0
+export async function getAllSlugs(): Promise<string[]> {
+  const supabase = createStaticClient()
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('slug')
+    .eq('is_active', true)
+    .eq('is_approved', true)
+
+  if (error) return []
+  return data?.map((r) => r.slug) ?? []
+}
+
+export async function getPendingListings(): Promise<Listing[]> {
+  const supabase = await createServiceClient()
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('is_approved', false)
+    .order('created_at', { ascending: false })
+
+  if (error) return []
+  return (data as Listing[]) ?? []
+}
+
+export async function getAllListingsAdmin(): Promise<Listing[]> {
+  const supabase = await createServiceClient()
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(200)
+
+  if (error) return []
+  return (data as Listing[]) ?? []
 }

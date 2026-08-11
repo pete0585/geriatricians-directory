@@ -3,104 +3,93 @@ import { stripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase/server'
 import type Stripe from 'stripe'
 
-export async function POST(request: NextRequest) {
-  // If webhook secret is a placeholder, skip verification and return 200
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-  if (!webhookSecret || webhookSecret.startsWith('PLACEHOLDER')) {
-    console.log('Stripe webhook: PLACEHOLDER secret — skipping processing')
-    return NextResponse.json({ received: true, skipped: 'placeholder' })
-  }
-
-  const body = await request.text()
-  const sig = request.headers.get('stripe-signature')
+export async function POST(req: NextRequest) {
+  const body = await req.text()
+  const sig = req.headers.get('stripe-signature')
 
   if (!sig) {
-    return NextResponse.json({ error: 'No signature' }, { status: 400 })
+    return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
   }
 
   let event: Stripe.Event
-
   try {
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
+    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
   } catch (err) {
-    console.error('Webhook signature verification failed:', err)
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: `Webhook error: ${message}` }, { status: 400 })
   }
 
   const supabase = await createServiceClient()
 
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session
-      const listingId = session.metadata?.listing_id
-      const planTier = session.metadata?.plan_tier as 'pro' | 'verified' | undefined
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    const listingId = session.metadata?.listing_id
+    const tier = session.metadata?.tier
 
-      if (!listingId || !planTier) {
-        console.error('STRIPE WEBHOOK: checkout.session.completed missing metadata', { sessionId: session.id })
-        if (process.env.RESEND_API_KEY) {
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: process.env.RESEND_FROM_EMAIL ?? 'hello@mail.geriatriciandirectory.com',
-              to: process.env.ADMIN_EMAIL ?? 'adam@thestrategicveteran.com',
-              subject: '⚠️ Stripe payment received but listing NOT upgraded',
-              html: `<p>A Stripe checkout completed but listing_id or plan_tier metadata was missing. Session ID: ${session.id}</p>`,
-            }),
-          }).catch(console.error)
-        }
-        break
-      }
+    if (listingId && tier) {
+      const tierRank = tier === 'featured' ? 2 : 1
+      const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
 
+      await Promise.all([
+        supabase
+          .from('geriatrician_listings')
+          .update({
+            listing_tier: tier,
+            listing_tier_rank: tierRank,
+            stripe_customer_id: session.customer as string,
+            stripe_subscription_id: session.subscription as string,
+            subscription_expires_at: expiresAt,
+          })
+          .eq('id', listingId),
+        supabase.from('geriatrician_payments').insert({
+          listing_id: listingId,
+          stripe_session_id: session.id,
+          amount: session.amount_total ?? 0,
+          tier,
+          status: 'paid',
+        }),
+      ])
+    }
+  }
+
+  if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object as Stripe.Subscription
+    const listingId = sub.metadata?.listing_id
+
+    if (listingId) {
       await supabase
-        .from('geriatricians_listings')
+        .from('geriatrician_listings')
         .update({
-          plan_tier: planTier,
-          stripe_customer_id: session.customer as string,
-          plan_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'active',
+          listing_tier: 'free',
+          listing_tier_rank: 0,
+          subscription_expires_at: null,
+          stripe_subscription_id: null,
         })
         .eq('id', listingId)
-
-      await supabase.from('geriatricians_payments').insert({
-        listing_id: listingId,
-        stripe_payment_intent_id: session.payment_intent as string,
-        stripe_subscription_id: session.subscription as string,
-        plan_tier: planTier,
-        amount_cents: session.amount_total ?? 0,
-        currency: session.currency ?? 'usd',
-        status: 'active',
-        period_start: new Date().toISOString(),
-        period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      })
-      break
     }
+  }
 
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object as Stripe.Subscription
-      const listingId = subscription.metadata?.listing_id
-      if (!listingId) break
-      await supabase
-        .from('geriatricians_listings')
-        .update({ plan_tier: 'free', plan_expires_at: null })
-        .eq('id', listingId)
-      await supabase
-        .from('geriatricians_payments')
-        .update({ status: 'canceled' })
-        .eq('stripe_subscription_id', subscription.id)
-      break
-    }
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice
+    const customerId = invoice.customer as string
 
-    case 'invoice.payment_failed': {
-      const invoice = event.data.object as Stripe.Invoice
-      const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id
-      if (subscriptionId) {
-        await supabase
-          .from('geriatricians_payments')
-          .update({ status: 'past_due' })
-          .eq('stripe_subscription_id', subscriptionId)
+    if (customerId) {
+      const { data: listings } = await supabase
+        .from('geriatrician_listings')
+        .select('id')
+        .eq('stripe_customer_id', customerId)
+
+      if (listings?.length) {
+        await supabase.from('geriatrician_payments').insert(
+          listings.map((l) => ({
+            listing_id: l.id,
+            stripe_session_id: null,
+            amount: 0,
+            tier: 'unknown',
+            status: 'payment_failed',
+          }))
+        )
       }
-      break
     }
   }
 

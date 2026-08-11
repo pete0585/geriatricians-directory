@@ -1,112 +1,113 @@
 import Link from 'next/link'
-import Image from 'next/image'
-import { MapPin, Video, Home, ShieldCheck, Star, CheckCircle } from 'lucide-react'
-import type { Listing } from '@/types'
-import { truncate } from '@/lib/utils'
+import { MapPin, Phone, Globe, CheckCircle, Star, UserCheck, Video } from 'lucide-react'
+import type { Listing } from '@/lib/types'
+import { formatCredentials, getSubspecialtyLabel, truncate } from '@/lib/utils'
 
 interface ListingCardProps {
   listing: Listing
-  featured?: boolean
 }
 
-export default function ListingCard({ listing, featured = false }: ListingCardProps) {
-  const isVerified = listing.plan_tier === 'verified'
-  const isPro = listing.plan_tier === 'pro' || isVerified
+export default function ListingCard({ listing }: ListingCardProps) {
+  const isFeatured = listing.listing_tier === 'featured'
+  const isVerified = listing.listing_tier === 'verified' || isFeatured
+  const isClaimed = !!listing.claimed_at
 
   return (
     <Link
-      href={`/geriatrician/${listing.slug}`}
-      className={`card block p-5 group ${featured ? 'border-2 border-sage-200' : ''}`}
+      href={`/listings/${listing.slug}`}
+      className={`card block hover:shadow-card-hover transition-shadow duration-200 overflow-hidden ${isFeatured ? 'ring-2 ring-gold' : ''}`}
     >
-      <div className="flex gap-4">
-        <div className="shrink-0">
-          {listing.photo_url ? (
-            <div className="relative h-16 w-16 rounded-2xl overflow-hidden bg-ivory-200">
-              <Image src={listing.photo_url} alt={listing.name} fill className="object-cover" sizes="64px" />
-            </div>
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sage-100 text-sage-400 text-xl font-serif font-bold">
-              {listing.name.charAt(0)}
+      {isFeatured && (
+        <div className="bg-gold text-white text-xs font-bold px-4 py-1.5 flex items-center gap-1.5">
+          <Star className="w-3 h-3" aria-label="featured" />
+          Featured Geriatrician
+        </div>
+      )}
+
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-display font-semibold text-navy text-base leading-tight truncate">
+              {formatCredentials(listing.full_name, listing.credentials)}
+            </h3>
+            {listing.practice_name && (
+              <p className="text-sm text-navy-400 mt-0.5 truncate">{listing.practice_name}</p>
+            )}
+          </div>
+          {listing.photo_url && (
+            <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-navy-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={listing.photo_url} alt={listing.full_name} className="w-full h-full object-cover" />
             </div>
           )}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h3 className="font-serif font-semibold text-charcoal-700 group-hover:text-sage-500 transition-colors truncate">
-                {listing.name}
-              </h3>
-              <p className="text-xs text-charcoal-400 mt-0.5">
-                {(listing.credentials ?? []).join(', ')}
-              </p>
-            </div>
-            <div className="shrink-0">
-              {isVerified && (
-                <span className="badge-verified">
-                  <ShieldCheck className="h-3 w-3" />
-                  Verified
-                </span>
-              )}
-              {!isVerified && isPro && (
-                <span className="badge-pro">
-                  <Star className="h-3 w-3" />
-                  Pro
-                </span>
-              )}
-            </div>
-          </div>
+        <div className="flex items-center gap-1.5 text-sm text-navy-500 mb-3">
+          <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-navy-400" aria-label="location" />
+          <span>{listing.city}, {listing.state}</span>
+        </div>
 
-          <div className="mt-2 flex items-center gap-1 text-xs text-charcoal-400">
-            <MapPin className="h-3.5 w-3.5 shrink-0 text-rose-400" />
-            <span>{listing.city}, {listing.state}</span>
-          </div>
-
-          {listing.bio && (
-            <p className="mt-2 text-xs text-charcoal-500 leading-relaxed line-clamp-2">
-              {truncate(listing.bio, 120)}
-            </p>
+        {/* Badges row */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {listing.is_abim_certified && (
+            <span className="badge-abim">
+              <CheckCircle className="w-3 h-3" aria-label="certified" />
+              ABIM Certified
+            </span>
           )}
+          {isVerified && (
+            <span className="badge-verified">
+              <CheckCircle className="w-3 h-3" aria-label="verified" />
+              {isFeatured ? 'Featured' : 'Verified'}
+            </span>
+          )}
+          {listing.is_accepting_new_patients === true && (
+            <span className="badge-accepting">
+              <UserCheck className="w-3 h-3" aria-label="accepting patients" />
+              Accepting Patients
+            </span>
+          )}
+          {listing.offers_telehealth && (
+            <span className="badge-telehealth">
+              <Video className="w-3 h-3" aria-label="telehealth" />
+              Telehealth
+            </span>
+          )}
+        </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {listing.telehealth && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-sage-50 px-2 py-0.5 text-xs text-sage-600">
-                <Video className="h-3 w-3" />
-                Telehealth
+        {/* Subspecialties */}
+        {listing.subspecialties?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {listing.subspecialties.slice(0, 3).map((s) => (
+              <span key={s} className="inline-block px-2 py-0.5 bg-navy-50 text-navy-600 text-xs rounded-full">
+                {getSubspecialtyLabel(s)}
               </span>
-            )}
-            {(listing.visit_types ?? []).includes('home') && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-ivory-200 px-2 py-0.5 text-xs text-charcoal-500">
-                <Home className="h-3 w-3" />
-                Home visits
-              </span>
-            )}
-            {listing.accepting_new_clients && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-600">
-                <CheckCircle className="h-3 w-3" />
-                Accepting patients
-              </span>
-            )}
-            {(listing.insurance_accepted ?? []).includes('Medicare') && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-ivory-200 px-2 py-0.5 text-xs text-charcoal-500">
-                Medicare
-              </span>
-            )}
+            ))}
           </div>
+        )}
 
-          {(listing.specialties ?? []).length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {(listing.specialties ?? []).slice(0, 3).map((s) => (
-                <span key={s} className="rounded-full bg-rose-50 px-2 py-0.5 text-xs text-rose-500">
-                  {s}
-                </span>
-              ))}
-              {(listing.specialties ?? []).length > 3 && (
-                <span className="rounded-full bg-ivory-200 px-2 py-0.5 text-xs text-charcoal-400">
-                  +{(listing.specialties ?? []).length - 3} more
-                </span>
-              )}
-            </div>
+        {listing.bio && isClaimed && (
+          <p className="text-sm text-navy-400 leading-relaxed mb-3">
+            {truncate(listing.bio, 100)}
+          </p>
+        )}
+
+        {/* Contact row — only shown for paid listings */}
+        <div className="flex items-center gap-4 pt-3 border-t border-navy-100 text-xs text-navy-400">
+          {isClaimed && listing.phone && (
+            <span className="flex items-center gap-1">
+              <Phone className="w-3 h-3" aria-label="phone" />
+              {isVerified ? listing.phone : 'Claim to view'}
+            </span>
+          )}
+          {isClaimed && listing.website && isVerified && (
+            <span className="flex items-center gap-1">
+              <Globe className="w-3 h-3" aria-label="website" />
+              Website
+            </span>
+          )}
+          {!isClaimed && (
+            <span className="text-navy-300 italic">Unclaimed listing</span>
           )}
         </div>
       </div>

@@ -1,47 +1,32 @@
 import Stripe from 'stripe'
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2025-02-24.acacia',
 })
 
-export const PLAN_PRICE_IDS = {
-  pro: process.env.STRIPE_FEATURED_PRICE_ID!,
-  verified: process.env.STRIPE_VERIFIED_PRICE_ID!,
-}
-
-export async function createCheckoutSession({
-  listingId,
-  planTier,
-  customerEmail,
-  successUrl,
-  cancelUrl,
-}: {
+export async function createCheckoutSession(params: {
   listingId: string
-  planTier: 'pro' | 'verified'
-  customerEmail?: string
-  successUrl: string
-  cancelUrl: string
-}) {
-  const priceId = PLAN_PRICE_IDS[planTier]
+  listingSlug: string
+  tier: 'verified' | 'featured'
+  email?: string
+}): Promise<Stripe.Checkout.Session> {
+  const priceId =
+    params.tier === 'featured'
+      ? process.env.STRIPE_FEATURED_PRICE_ID!
+      : process.env.STRIPE_VERIFIED_PRICE_ID!
 
-  const session = await stripe.checkout.sessions.create({
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://geriatriciandirectory.com'
+
+  return stripe.checkout.sessions.create({
     mode: 'subscription',
+    payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
-    allow_promotion_codes: true,
-    customer_email: customerEmail,
-    success_url: successUrl,
-    cancel_url: cancelUrl,
     metadata: {
-      listing_id: listingId,
-      plan_tier: planTier,
+      listing_id: params.listingId,
+      tier: params.tier,
     },
-    subscription_data: {
-      metadata: {
-        listing_id: listingId,
-        plan_tier: planTier,
-      },
-    },
+    customer_email: params.email || undefined,
+    success_url: `${siteUrl}/listings/${params.listingSlug}?upgraded=true`,
+    cancel_url: `${siteUrl}/listings/${params.listingSlug}`,
   })
-
-  return session
 }

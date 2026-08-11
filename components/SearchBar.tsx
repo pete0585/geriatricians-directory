@@ -1,110 +1,54 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { Search, MapPin, Loader2 } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Search, MapPin } from 'lucide-react'
 
 interface SearchBarProps {
-  defaultLocation?: string
-  defaultQuery?: string
-  size?: 'default' | 'large'
+  placeholder?: string
   className?: string
 }
 
-interface ZipResult {
-  city: string
-  state: string
-  state_abbr: string
-  lat: number
-  lng: number
-}
-
-export default function SearchBar({
-  defaultLocation = '',
-  defaultQuery = '',
-  size = 'default',
-  className = '',
-}: SearchBarProps) {
-  const [location, setLocation] = useState(defaultLocation)
-  const [query, setQuery] = useState(defaultQuery)
-  const [resolvedCity, setResolvedCity] = useState<string | undefined>()
-  const [resolvedState, setResolvedState] = useState<string | undefined>()
-  const [zipLoading, setZipLoading] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+export default function SearchBar({ placeholder = 'Search by name, city, or state...', className = '' }: SearchBarProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
-  async function resolveZip(value: string) {
-    if (!/^\d{5}$/.test(value)) return
-    setZipLoading(true)
-    try {
-      const res = await fetch(`/api/geocode/zip?zip=${value}`)
-      if (!res.ok) return
-      const data: ZipResult = await res.json()
-      setLocation(`${data.city}, ${data.state_abbr}`)
-      setResolvedCity(data.city)
-      setResolvedState(data.state_abbr)
-    } catch {
-      // silently ignore
-    } finally {
-      setZipLoading(false)
-    }
-  }
+  const [q, setQ] = useState(searchParams.get('q') || '')
+  const [state, setState] = useState(searchParams.get('state') || '')
 
-  function handleLocationChange(value: string) {
-    setLocation(value)
-    setResolvedCity(undefined)
-    setResolvedState(undefined)
-    if (/^\d{5}$/.test(value)) {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-      debounceRef.current = setTimeout(() => resolveZip(value), 400)
-    }
-  }
-
-  function handleSubmit(e: React.FormEvent) {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault()
     const params = new URLSearchParams()
-    if (resolvedCity) params.set('city', resolvedCity)
-    if (resolvedState) params.set('state', resolvedState)
-    else if (location.trim()) params.set('location', location.trim())
-    if (query.trim()) params.set('q', query.trim())
+    if (q.trim()) params.set('q', q.trim())
+    if (state.trim()) params.set('state', state.trim().toUpperCase())
     router.push(`/listings?${params.toString()}`)
-  }
-
-  const isLarge = size === 'large'
+  }, [q, state, router])
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className={`flex flex-col sm:flex-row gap-2 ${isLarge ? 'w-full max-w-2xl' : 'w-full max-w-xl'} ${className}`}
-    >
-      <div className={`relative flex-1 ${isLarge ? 'sm:flex-[2]' : ''}`}>
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-charcoal-300" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Memory care, fall prevention, dementia…"
-          className={`w-full rounded-xl border border-ivory-300 bg-white pl-10 pr-4 text-sm text-charcoal placeholder:text-charcoal-300 focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage-100 ${isLarge ? 'py-4' : 'py-3'}`}
-        />
-      </div>
-
+    <form onSubmit={handleSearch} className={`flex flex-col sm:flex-row gap-3 ${className}`}>
       <div className="relative flex-1">
-        {zipLoading ? (
-          <Loader2 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-sage-400 animate-spin" />
-        ) : (
-          <MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-charcoal-300" />
-        )}
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-400" aria-label="search icon" />
         <input
           type="text"
-          value={location}
-          onChange={(e) => handleLocationChange(e.target.value)}
-          placeholder="City, state, or zip…"
-          className={`w-full rounded-xl border border-ivory-300 bg-white pl-10 pr-4 text-sm text-charcoal placeholder:text-charcoal-300 focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage-100 ${isLarge ? 'py-4' : 'py-3'}`}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={placeholder}
+          className="w-full pl-10 pr-4 py-3 border border-navy-200 rounded-lg text-charcoal placeholder-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-300 focus:border-transparent bg-white text-sm"
         />
       </div>
-
-      <button type="submit" className={`btn-primary shrink-0 ${isLarge ? 'px-8 py-4 text-base' : 'px-6 py-3'}`}>
-        Find a Geriatrician
+      <div className="relative sm:w-48">
+        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-400" aria-label="location icon" />
+        <input
+          type="text"
+          value={state}
+          onChange={(e) => setState(e.target.value)}
+          placeholder="State (e.g. FL)"
+          maxLength={2}
+          className="w-full pl-10 pr-4 py-3 border border-navy-200 rounded-lg text-charcoal placeholder-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-300 focus:border-transparent bg-white text-sm uppercase"
+        />
+      </div>
+      <button type="submit" className="btn-primary px-6 py-3 text-sm whitespace-nowrap">
+        Search
       </button>
     </form>
   )

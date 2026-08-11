@@ -1,138 +1,132 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import Link from 'next/link'
-import SearchBar from '@/components/SearchBar'
+import { getListings } from '@/lib/data'
 import ListingCard from '@/components/ListingCard'
 import FilterSidebar from '@/components/FilterSidebar'
-import { getListings } from '@/lib/data'
+import SearchBar from '@/components/SearchBar'
+import { formatStateName } from '@/lib/utils'
 
-interface SearchParams {
-  q?: string
-  location?: string
-  state?: string
-  city?: string
-  specialty?: string
-  insurance?: string
-  visitType?: string
-  telehealth?: string
-  acceptingNew?: string
-  tier?: string
-  page?: string
+export const dynamic = 'force-dynamic'
+
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-interface Props {
-  searchParams: Promise<SearchParams>
+function getParam(params: Record<string, string | string[] | undefined>, key: string): string {
+  const val = params[key]
+  return Array.isArray(val) ? val[0] : val || ''
 }
 
-function parseLocation(location?: string): { city?: string; state?: string } {
-  if (!location) return {}
-  const loc = location.trim()
-  const commaMatch = loc.match(/^(.+),\s*([A-Za-z]{2})$/)
-  if (commaMatch) return { city: commaMatch[1].trim(), state: commaMatch[2].toUpperCase() }
-  if (/^[A-Za-z]{2}$/.test(loc)) return { state: loc.toUpperCase() }
-  return { city: loc }
-}
-
-export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const params = await searchParams
-  const parsed = parseLocation(params.location)
-  const state = params.state ?? parsed.state
-  const city = params.city ?? parsed.city
-  const specialty = params.specialty
+  const state = getParam(params, 'state')
+  const city = getParam(params, 'city')
+  const subspecialty = getParam(params, 'subspecialty')
 
-  let title = 'Find a Geriatrician Near You'
-  let description = 'Search the nationwide geriatrician directory. Filter by state, city, insurance, and specialty.'
+  let title = 'Browse Geriatricians — Board-Certified Geriatric Medicine Specialists'
+  let description = 'Search the complete directory of US board-certified geriatricians. Filter by state, city, specialty, telehealth, and accepting new patients.'
 
-  if (city && state) {
-    title = `Geriatricians in ${city}, ${state}`
-    description = `Find board-certified geriatricians in ${city}, ${state}. Filter by insurance and specialty.`
+  if (state && city) {
+    title = `Geriatricians in ${city}, ${formatStateName(state)} — Find a Geriatric Medicine Specialist`
+    description = `Find board-certified geriatricians in ${city}, ${formatStateName(state)}. Compare specialists by subspecialty, telehealth options, and new patient availability.`
   } else if (state) {
-    title = `Geriatricians in ${state}`
-    description = `Find board-certified geriatricians in ${state}.`
-  } else if (specialty) {
-    title = `Geriatricians specializing in ${specialty}`
+    title = `Find a Geriatrician in ${formatStateName(state)} — Board-Certified Specialists`
+    description = `Browse all board-certified geriatricians in ${formatStateName(state)}. Filter by city, subspecialty, and whether they accept new patients.`
+  } else if (subspecialty) {
+    title = `${subspecialty.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())} Geriatricians — GeriatricianDirectory.com`
   }
 
   return { title, description }
 }
 
-export default async function ListingsPage({ searchParams }: Props) {
-  const params = await searchParams
-  const page = parseInt(params.page ?? '1', 10)
-  const parsed = parseLocation(params.location)
-  const city = params.city ?? parsed.city
-  const state = params.state ?? parsed.state
+async function ListingsContent({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
+  const filters = {
+    q: getParam(searchParams, 'q') || undefined,
+    state: getParam(searchParams, 'state') || undefined,
+    city: getParam(searchParams, 'city') || undefined,
+    subspecialty: getParam(searchParams, 'subspecialty') || undefined,
+    accepting_new_patients: getParam(searchParams, 'accepting_new_patients') || undefined,
+    telehealth: getParam(searchParams, 'telehealth') || undefined,
+    tier: getParam(searchParams, 'tier') || undefined,
+    page: parseInt(getParam(searchParams, 'page') || '1', 10),
+  }
 
-  const { listings, total } = await getListings({
-    state,
-    city,
-    specialty: params.specialty,
-    insurance: params.insurance,
-    visitType: params.visitType,
-    telehealth: params.telehealth === 'true' ? true : undefined,
-    acceptingNew: params.acceptingNew === 'true' ? true : undefined,
-    search: params.q,
-    tier: params.tier,
-    page,
-    pageSize: 20,
-  })
+  const { listings, total } = await getListings(filters)
+  const page = filters.page || 1
+  const pageSize = 24
+  const totalPages = Math.ceil(total / pageSize)
 
-  const totalPages = Math.ceil(total / 20)
+  const stateLabel = filters.state ? formatStateName(filters.state) : ''
+  const heading = filters.state
+    ? `Geriatricians in ${filters.city ? `${filters.city}, ` : ''}${stateLabel}`
+    : 'Browse All Geriatricians'
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6">
-        <SearchBar defaultQuery={params.q} defaultLocation={params.location} />
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-display font-bold text-navy text-2xl">{heading}</h1>
+          <p className="text-sm text-navy-400 mt-1">{total.toLocaleString()} geriatrician{total !== 1 ? 's' : ''} found</p>
+        </div>
       </div>
 
-      <div className="flex gap-8">
-        <aside className="hidden lg:block w-64 shrink-0">
-          <Suspense>
-            <FilterSidebar />
-          </Suspense>
-        </aside>
+      {listings.length === 0 ? (
+        <div className="card p-12 text-center">
+          <p className="text-navy-400 text-base mb-2">No geriatricians found for these filters.</p>
+          <p className="text-navy-300 text-sm">Try broadening your search or removing some filters.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {listings.map((listing) => (
+            <ListingCard key={listing.id} listing={listing} />
+          ))}
+        </div>
+      )}
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-10">
+          {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => i + 1).map((p) => {
+            const params = new URLSearchParams(searchParams as Record<string, string>)
+            params.set('page', String(p))
+            return (
+              <a
+                key={p}
+                href={`/listings?${params.toString()}`}
+                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  p === page
+                    ? 'bg-navy text-white'
+                    : 'bg-white text-navy border border-navy-200 hover:bg-navy-50'
+                }`}
+              >
+                {p}
+              </a>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default async function ListingsPage({ searchParams }: PageProps) {
+  const params = await searchParams
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-6">
+        <Suspense>
+          <SearchBar />
+        </Suspense>
+      </div>
+      <div className="flex flex-col lg:flex-row gap-8">
+        <Suspense>
+          <FilterSidebar />
+        </Suspense>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-5">
-            <h1 className="font-serif text-xl font-semibold text-charcoal-700">
-              {total > 0 ? (
-                <><span className="text-sage-500">{total.toLocaleString()}</span> geriatrician{total !== 1 ? 's' : ''} found</>
-              ) : (
-                'No geriatricians found'
-              )}
-            </h1>
-          </div>
-
-          {listings.length === 0 ? (
-            <div className="card p-12 text-center">
-              <p className="text-charcoal-500 mb-4">
-                No geriatricians found matching your search. Try adjusting your filters.
-              </p>
-              <Link href="/listings" className="btn-secondary text-sm">Clear all filters</Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {listings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          )}
-
-          {totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-2">
-              {page > 1 && (
-                <Link href={`?${new URLSearchParams({ ...params, page: String(page - 1) })}`} className="btn-secondary text-sm py-2 px-4">
-                  Previous
-                </Link>
-              )}
-              <span className="text-sm text-charcoal-400">Page {page} of {totalPages}</span>
-              {page < totalPages && (
-                <Link href={`?${new URLSearchParams({ ...params, page: String(page + 1) })}`} className="btn-secondary text-sm py-2 px-4">
-                  Next
-                </Link>
-              )}
-            </div>
-          )}
+          <Suspense fallback={<div className="h-48 animate-pulse bg-navy-50 rounded-xl" />}>
+            <ListingsContent searchParams={params} />
+          </Suspense>
         </div>
       </div>
     </div>

@@ -1,44 +1,29 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Navigation from '@/components/Navigation'
+import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import NewsletterFooterBar from '@/components/NewsletterFooterBar'
-import { Analytics } from '@vercel/analytics/react'
-import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export const metadata: Metadata = {
   title: {
-    default: 'Find a Geriatrician Near You | GeriatricianDirectory.com',
+    default: 'GeriatricianDirectory.com — Find Board-Certified Geriatricians Near You',
     template: '%s | GeriatricianDirectory.com',
   },
   description:
-    'Find a board-certified geriatrician near you. Search by city, state, insurance, or specialty. Expert care for older adults and their families.',
-  keywords: [
-    'geriatrician',
-    'geriatric doctor',
-    'elderly care specialist',
-    'find a geriatrician',
-    'geriatrician near me',
-    'aging care doctor',
-    'memory care specialist',
-  ],
-  authors: [{ name: 'GeriatricianDirectory.com' }],
-  creator: 'GeriatricianDirectory.com',
+    'Search the most complete directory of board-certified geriatricians in the US. Filter by location, specialty, telehealth availability, and accepting new patients.',
+  keywords: ['geriatrician', 'geriatric doctor', 'senior care specialist', 'geriatric medicine', 'board certified geriatrician'],
   openGraph: {
+    siteName: 'GeriatricianDirectory.com',
     type: 'website',
     locale: 'en_US',
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://geriatriciandirectory.com',
-    siteName: 'GeriatricianDirectory.com',
-    title: 'Find a Geriatrician Near You | GeriatricianDirectory.com',
-    description:
-      'Find a board-certified geriatrician near you. Search by city, insurance, and specialty. Free to search, free to list.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Find a Geriatrician Near You | GeriatricianDirectory.com',
-    description: 'Find a board-certified geriatrician near you.',
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://geriatriciandirectory.com'),
+  robots: {
+    index: true,
+    follow: true,
+  },
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://geriatriciandirectory.com'),
 }
 
 export default function RootLayout({
@@ -48,13 +33,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col">
-        <Navigation />
-        <main className="flex-1">{children}</main>
+      <body>
+        <Navbar />
+        <main className="min-h-screen">{children}</main>
         <Footer />
-        <NewsletterFooterBar />
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   )

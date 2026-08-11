@@ -1,122 +1,58 @@
 import type { Metadata } from 'next'
-import { CheckCircle, Star, ShieldCheck } from 'lucide-react'
 import SubmitForm from '@/components/SubmitForm'
+import { CheckCircle } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'List Your Geriatric Practice',
+  title: 'Add Your Geriatric Medicine Practice | GeriatricianDirectory.com',
   description:
-    'Add your practice to GeriatricianDirectory.com. Free listing available. Pro ($79/year) and Verified ($129/year) listings get full profiles and priority placement.',
+    'List your geriatric medicine practice on the most complete geriatrician directory in the US. Free listing, $99/yr for Verified, $199/yr for Featured placement.',
 }
 
-const PRICING_TIERS = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'Get discovered. No credit card required.',
-    features: [
-      'Name, credentials, city, state listed',
-      'Shown in search results',
-      'Claim link displayed',
-    ],
-    cta: 'Submit Free Listing',
-    highlighted: false,
-  },
-  {
-    name: 'Pro',
-    price: '$79',
-    period: 'per year',
-    description: 'Full profile that converts searchers to patients.',
-    features: [
-      'Everything in Free',
-      'Profile photo',
-      'Full bio',
-      'Specialties listed',
-      'Insurance accepted',
-      'Visit types (home/office/telehealth)',
-      'Website link',
-      'Higher search placement',
-      '"Pro" badge on listing',
-    ],
-    cta: 'Get Pro Listing',
-    highlighted: true,
-  },
-  {
-    name: 'Verified',
-    price: '$129',
-    period: 'per year',
-    description: 'Maximum trust. Maximum visibility.',
-    features: [
-      'Everything in Pro',
-      'Credential verification',
-      '"Verified" badge — highest trust signal',
-      'Priority placement in city and state pages',
-    ],
-    cta: 'Get Verified',
-    highlighted: false,
-  },
+const BENEFITS = [
+  'Free base listing — no credit card required',
+  'Claim in 2 minutes via email verification',
+  'Add photo, bio, and subspecialty tags',
+  'Verified listing ($99/yr) shows contact info and gets priority placement',
+  'Featured listing ($199/yr) pins you first in city search results',
+  'One new Medicare patient = 5–25× your annual listing cost',
 ]
 
 export default function SubmitPage() {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="text-center mb-12">
-        <h1 className="font-serif text-4xl font-bold text-charcoal-800">
-          List Your Practice on GeriatricianDirectory.com
-        </h1>
-        <p className="mt-4 text-lg text-charcoal-500 max-w-2xl mx-auto">
-          The only nationwide directory built for geriatric medicine specialists. Free to list.
-          New Medicare patients from a Pro listing pay for the year many times over.
-        </p>
-      </div>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div>
+          <h1 className="font-display font-bold text-navy text-3xl mb-4">
+            Add Your Practice to GeriatricianDirectory.com
+          </h1>
+          <p className="text-navy-500 mb-6 leading-relaxed">
+            Fewer than 7,000 geriatricians serve 58 million Americans over 65. Families searching for you
+            right now will find you here — or they won&apos;t find you at all. Your listing may already exist
+            from the NPI registry. If it does, claim it. If not, add it below.
+          </p>
 
-      <div id="pricing" className="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-16">
-        {PRICING_TIERS.map((tier) => (
-          <div
-            key={tier.name}
-            className={`rounded-2xl p-6 ${tier.highlighted ? 'border-2 border-sage-300 bg-sage-50 relative' : 'border border-ivory-300 bg-white'}`}
-          >
-            {tier.highlighted && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-sage-400 text-white text-xs font-semibold px-3 py-1 rounded-full">Most Popular</span>
-              </div>
-            )}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-1">
-                {tier.name === 'Pro' && <Star className="h-4 w-4 text-sage-500" />}
-                {tier.name === 'Verified' && <ShieldCheck className="h-4 w-4 text-rose-400" />}
-                <span className="font-semibold text-charcoal-700">{tier.name}</span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="font-serif text-3xl font-bold text-charcoal-800">{tier.price}</span>
-                <span className="text-sm text-charcoal-400">/{tier.period}</span>
-              </div>
-              <p className="mt-1 text-xs text-charcoal-500">{tier.description}</p>
-            </div>
-            <ul className="space-y-2 mb-6">
-              {tier.features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-sm text-charcoal-600">
-                  <CheckCircle className="h-4 w-4 text-sage-400 mt-0.5 shrink-0" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <a
-              href="#submit-form"
-              className={`block w-full text-center rounded-full py-2.5 text-sm font-semibold transition-colors ${tier.highlighted ? 'bg-sage text-white hover:bg-sage-400' : 'border border-charcoal-200 text-charcoal-600 hover:border-sage hover:text-sage-600'}`}
-            >
-              {tier.cta}
-            </a>
+          <ul className="space-y-3 mb-8">
+            {BENEFITS.map((b, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm text-navy-600">
+                <CheckCircle className="w-4 h-4 text-sage flex-shrink-0 mt-0.5" aria-label="check" />
+                {b}
+              </li>
+            ))}
+          </ul>
+
+          <div id="verified" className="card p-5 bg-navy-50 border-navy-200 mb-4">
+            <div className="font-display font-bold text-navy mb-1">Verified — $99/yr</div>
+            <p className="text-xs text-navy-500">Full profile with photo, bio, subspecialty tags, contact info visible, priority placement, Board-Certified badge.</p>
           </div>
-        ))}
-      </div>
+          <div id="featured" className="card p-5 bg-gold-50 border-gold-200">
+            <div className="font-display font-bold text-navy mb-1">Featured — $199/yr</div>
+            <p className="text-xs text-navy-500">Everything in Verified plus: pinned first in city results, Featured badge, dedicated SEO landing page, monthly inquiry report.</p>
+          </div>
+        </div>
 
-      <div id="submit-form">
-        <h2 className="font-serif text-2xl font-bold text-charcoal-800 mb-2">Submit Your Listing</h2>
-        <p className="text-sm text-charcoal-500 mb-8">
-          Start with a free listing. After submission you&apos;ll receive a claim link to upgrade to Pro or Verified.
-        </p>
-        <SubmitForm />
+        <div>
+          <SubmitForm />
+        </div>
       </div>
     </div>
   )
