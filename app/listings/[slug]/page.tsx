@@ -4,6 +4,9 @@ import { getListingBySlug, getAllSlugs } from '@/lib/data'
 import ListingDetail from '@/components/ListingDetail'
 import { getAbsoluteUrl, formatCredentials, formatStateName } from '@/lib/utils'
 
+export const dynamic = 'force-dynamic'
+export const dynamicParams = true
+
 interface PageProps {
   params: Promise<{ slug: string }>
 }
