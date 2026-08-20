@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Find a Board-Certified Geriatrician Near You | GeriatricianDirectory.com',
   description:
-    'Search the most complete directory of board-certified geriatricians in the US. Filter by city, telehealth, and whether they're accepting new patients.',
+    "Search the most complete directory of board-certified geriatricians in the US. Filter by city, telehealth, and whether they're accepting new patients.",
 }
 
 const STATS = [
@@ -172,3 +172,4 @@ export default function HomePage() {
     </div>
   )
 }
+
