@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Claim Your Geriatrician Listing',
@@ -30,9 +31,9 @@ export default function ClaimIndexPage() {
       </form>
       <p className="mt-4 text-sm text-gray-400">
         Already have a claim link?{" "}
-        <a href="/listings" className="text-blue-600 hover:underline">
+        <Link href="/listings" className="text-blue-600 hover:underline">
           Browse all listings
-        </a>
+        </Link>
       </p>
     </div>
   )
