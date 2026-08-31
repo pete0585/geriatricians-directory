@@ -131,8 +131,8 @@ Note: Always use `www.geriatriciandirectory.com` for webhooks — non-www redire
 | Featured | $199/yr | Everything in Verified + pinned first in city results, Featured badge, dedicated SEO page, monthly inquiry report |
 
 **Stripe price IDs:**
-- Verified: `price_1U3KxOGzK9Siblue5fmFmBBY`
-- Featured: `price_1U3KxPGzK9SiblueOIi8zXAF`
+- Verified: `price_REPLACE_ME`
+- Featured: `price_REPLACE_ME`
 
 ---
 
