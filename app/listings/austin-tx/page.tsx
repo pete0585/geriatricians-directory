@@ -1,11 +1,12 @@
-import type { Metadata } from "next"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import { cityPageMetadata } from "@/lib/city-pages"
 
-export const metadata: Metadata = {
-  title: "Best Geriatrician in Austin, TX | Geriatrician Directory",
-  description: "Find geriatrician in Austin, Texas. 37+ listed. Filter by city and compare providers.",
-}
+export const metadata = cityPageMetadata(
+  "austin-tx",
+  "Best Geriatrician in Austin, TX | Geriatrician Directory",
+  "Find geriatrician in Austin, Texas. 37+ listed. Filter by city and compare providers.",
+)
 
 async function getListings() {
   const supabase = await createClient()
