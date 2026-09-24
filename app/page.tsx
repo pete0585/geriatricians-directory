@@ -6,6 +6,7 @@ import SearchBar from '@/components/SearchBar'
 import ListingCard from '@/components/ListingCard'
 import { getFeaturedListings, getRecentListings, getTotalCount } from '@/lib/data'
 import { CATEGORIES } from '@/lib/types'
+import NewsletterSignup from '@/components/NewsletterSignup'
 
 export const dynamic = 'force-dynamic'
 
@@ -94,6 +95,11 @@ async function HomepageContent() {
           </div>
         </section>
       )}
+
+      {/* Newsletter signup */}
+      <section className="py-12 px-4">
+        <NewsletterSignup />
+      </section>
     </>
   )
 }
