@@ -109,12 +109,21 @@ export default function HomePage() {
             The most complete geriatrician directory in the US
           </div>
           <h1 className="font-display font-extrabold text-navy text-4xl sm:text-5xl lg:text-6xl leading-tight mb-5">
-            Find a Geriatrician Who<br />
-            <span className="text-sage">Specializes in Aging</span>
+            Find trusted geriatricians near you
           </h1>
           <p className="text-navy-500 text-lg max-w-2xl mx-auto mb-3">
-            Fewer than 7,000 board-certified geriatricians serve 58 million Americans over 65.
-            We make every one of them findable — by city, specialty, and whether they&apos;re accepting new patients.
+            Browse board-certified geriatricians by location and whether they are accepting new patients — and connect directly. Free, always.
+          </p>
+          <p className="text-sm text-gray-500 mt-4">
+            Are you a geriatrician?{' '}
+            <a
+              href="https://studiozerohq.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:opacity-80"
+            >
+              List your practice free →
+            </a>
           </p>
           <p className="text-navy-400 text-sm max-w-lg mx-auto mb-10">
             Used by families navigating a parent&apos;s dementia diagnosis, fall risk, or polypharmacy concerns.
