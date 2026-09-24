@@ -1,117 +1,89 @@
-import type { Metadata } from 'next'
-import Link from 'next/link'
-import { Suspense } from 'react'
-import { Users, MapPin, Star, CheckCircle, ArrowRight, Search } from 'lucide-react'
-import SearchBar from '@/components/SearchBar'
-import ListingCard from '@/components/ListingCard'
-import { getFeaturedListings, getRecentListings, getTotalCount } from '@/lib/data'
-import { CATEGORIES } from '@/lib/types'
-import NewsletterSignup from '@/components/NewsletterSignup'
-
-export const dynamic = 'force-dynamic'
-
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { Suspense } from 'react';
+import { Users, MapPin, Star, CheckCircle, ArrowRight, Search } from 'lucide-react';
+import SearchBar from '@/components/SearchBar';
+import ListingCard from '@/components/ListingCard';
+import { getFeaturedListings, getRecentListings, getTotalCount } from '@/lib/data';
+import { CATEGORIES } from '@/lib/types';
+import NewsletterSignup from '@/components/NewsletterSignup';
+export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
-  title: 'Find a Board-Certified Geriatrician Near You | GeriatricianDirectory.com',
-  description:
-    "Search the most complete directory of board-certified geriatricians in the US. Filter by city, telehealth, and whether they're accepting new patients.",
-}
-
+    title: 'Find a Board-Certified Geriatrician Near You | GeriatricianDirectory.com',
+    description: "Search the most complete directory of board-certified geriatricians in the US. Filter by city, telehealth, and whether they're accepting new patients.",
+};
 const STATS = [
-  { icon: Users, value: '7,000+', label: 'US Geriatricians Listed' },
-  { icon: MapPin, value: '50', label: 'States Covered' },
-  { icon: Search, value: '5,400', label: 'Monthly "Near Me" Searches' },
-  { icon: Star, value: '$99/yr', label: 'Verified Listing' },
-]
-
+    { icon: Users, value: '7,000+', label: 'US Geriatricians Listed' },
+    { icon: MapPin, value: '50', label: 'States Covered' },
+    { icon: Search, value: '5,400', label: 'Monthly "Near Me" Searches' },
+    { icon: Star, value: "Free listing \u2014 public contact details included", label: 'Verified Listing' },
+];
 async function HomepageContent() {
-  const [featured, recent, total] = await Promise.all([
-    getFeaturedListings(3),
-    getRecentListings(8),
-    getTotalCount(),
-  ])
-
-  return (
-    <>
+    const [featured, recent, total] = await Promise.all([
+        getFeaturedListings(3),
+        getRecentListings(8),
+        getTotalCount(),
+    ]);
+    return (<>
       {/* Stats */}
-      {total > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
-          {STATS.map(({ icon: Icon, value, label }, i) => (
-            <div key={i} className="card p-5 text-center">
-              <Icon className="w-5 h-5 text-navy mx-auto mb-2" aria-label={label} />
+      {total > 0 && (<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+          {STATS.map(({ icon: Icon, value, label }, i) => (<div key={i} className="card p-5 text-center">
+              <Icon className="w-5 h-5 text-navy mx-auto mb-2" aria-label={label}/>
               <div className="font-display font-bold text-navy text-xl">{i === 0 ? `${total.toLocaleString()}+` : value}</div>
               <div className="text-xs text-navy-400 mt-0.5">{label}</div>
-            </div>
-          ))}
-        </div>
-      )}
+            </div>))}
+        </div>)}
 
       {/* Featured listings */}
-      {featured.length > 0 && (
-        <section className="mb-16">
+      {featured.length > 0 && (<section className="mb-16">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-display font-bold text-navy text-2xl">Featured Geriatricians</h2>
             <Link href="/listings?tier=featured" className="text-sm text-navy hover:text-navy-700 flex items-center gap-1">
-              View all <ArrowRight className="w-4 h-4" aria-label="arrow" />
+              View all <ArrowRight className="w-4 h-4" aria-label="arrow"/>
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {featured.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
+            {featured.map((listing) => (<ListingCard key={listing.id} listing={listing}/>))}
           </div>
-        </section>
-      )}
+        </section>)}
 
       {/* Specialty categories */}
       <section className="mb-16">
         <h2 className="font-display font-bold text-navy text-2xl mb-6">Browse by Specialty</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {CATEGORIES.map((cat) => (
-            <Link
-              key={cat.slug}
-              href={`/categories/${cat.slug}`}
-              className="card p-5 hover:shadow-card-hover transition-shadow group"
-            >
+          {CATEGORIES.map((cat) => (<Link key={cat.slug} href={`/categories/${cat.slug}`} className="card p-5 hover:shadow-card-hover transition-shadow group">
               <h3 className="font-display font-semibold text-navy group-hover:text-navy-700 text-sm mb-1">{cat.label}</h3>
               <p className="text-xs text-navy-400">Find specialists →</p>
-            </Link>
-          ))}
+            </Link>))}
         </div>
       </section>
 
       {/* Recent listings */}
-      {recent.length > 0 && (
-        <section className="mb-16">
+      {recent.length > 0 && (<section className="mb-16">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-display font-bold text-navy text-2xl">Recently Added</h2>
             <Link href="/listings" className="text-sm text-navy hover:text-navy-700 flex items-center gap-1">
-              Browse all <ArrowRight className="w-4 h-4" aria-label="arrow" />
+              Browse all <ArrowRight className="w-4 h-4" aria-label="arrow"/>
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {recent.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
+            {recent.map((listing) => (<ListingCard key={listing.id} listing={listing}/>))}
           </div>
-        </section>
-      )}
+        </section>)}
 
       {/* Newsletter signup */}
       <section className="py-12 px-4">
         <NewsletterSignup />
       </section>
-    </>
-  )
+    </>);
 }
-
 export default function HomePage() {
-  return (
-    <div className="bg-gradient-hero">
+    return (<div className="bg-gradient-hero">
       {/* Hero */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-navy-50 text-navy text-xs font-semibold px-4 py-1.5 rounded-full mb-5 border border-navy-100">
-            <CheckCircle className="w-3.5 h-3.5 text-sage" aria-label="verified" />
+            <CheckCircle className="w-3.5 h-3.5 text-sage" aria-label="verified"/>
             The most complete geriatrician directory in the US
           </div>
           <h1 className="font-display font-extrabold text-navy text-4xl sm:text-5xl lg:text-6xl leading-tight mb-5">
@@ -122,12 +94,7 @@ export default function HomePage() {
           </p>
           <p className="text-sm text-gray-500 mt-4">
             Are you a geriatrician?{' '}
-            <a
-              href="https://studiozerohq.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:opacity-80"
-            >
+            <a href="https://studiozerohq.com" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">
               List your practice free →
             </a>
           </p>
@@ -137,31 +104,31 @@ export default function HomePage() {
 
           <div className="max-w-3xl mx-auto">
             <Suspense>
-              <SearchBar placeholder="Search by doctor name, city, or state..." />
+              <SearchBar placeholder="Search by doctor name, city, or state..."/>
             </Suspense>
           </div>
 
           <div className="flex flex-wrap justify-center gap-3 mt-6 text-sm">
             <Link href="/listings?accepting_new_patients=yes" className="inline-flex items-center gap-1.5 text-navy hover:text-navy-700 font-medium">
-              <span className="w-2 h-2 rounded-full bg-sage inline-block" />
+              <span className="w-2 h-2 rounded-full bg-sage inline-block"/>
               Accepting New Patients
             </Link>
             <Link href="/listings?telehealth=yes" className="inline-flex items-center gap-1.5 text-navy hover:text-navy-700 font-medium">
-              <span className="w-2 h-2 rounded-full bg-navy-300 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-navy-300 inline-block"/>
               Telehealth Available
             </Link>
             <Link href="/categories/memory-care" className="inline-flex items-center gap-1.5 text-navy hover:text-navy-700 font-medium">
-              <span className="w-2 h-2 rounded-full bg-gold inline-block" />
+              <span className="w-2 h-2 rounded-full bg-gold inline-block"/>
               Memory Care
             </Link>
             <Link href="/categories/palliative-care" className="inline-flex items-center gap-1.5 text-navy hover:text-navy-700 font-medium">
-              <span className="w-2 h-2 rounded-full bg-navy-200 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-navy-200 inline-block"/>
               Palliative Care
             </Link>
           </div>
         </div>
 
-        <Suspense fallback={<div className="h-48 animate-pulse bg-navy-50 rounded-xl" />}>
+        <Suspense fallback={<div className="h-48 animate-pulse bg-navy-50 rounded-xl"/>}>
           <HomepageContent />
         </Suspense>
       </div>
@@ -184,7 +151,5 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-    </div>
-  )
+    </div>);
 }
-

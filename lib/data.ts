@@ -29,7 +29,6 @@ export async function getListings(
   if (subspecialty) query = query.contains('subspecialties', [subspecialty])
   if (accepting_new_patients === 'yes') query = query.eq('is_accepting_new_patients', true)
   if (telehealth === 'yes') query = query.eq('offers_telehealth', true)
-  if (tier) query = query.eq('listing_tier', tier)
 
   const { data, count, error } = await query
   if (error) throw error
@@ -66,7 +65,6 @@ export async function getFeaturedListings(limit = 6): Promise<Listing[]> {
   const { data, error } = await supabase
     .from(TABLE)
     .select('*')
-    .eq('listing_tier', 'featured')
     .eq('is_active', true)
     .eq('is_approved', true)
     .order('full_name', { ascending: true })
