@@ -70,6 +70,24 @@ export default function ClaimFlow({ listing, token }: ClaimFlowProps) {
           You&apos;ve successfully verified and claimed your listing for <strong>{name}</strong>.
           Log in to complete your profile and add your photo, bio, and subspecialties.
         </p>
+        {/* Studio Zero upsell */}
+        <div className="rounded-xl bg-blue-50 border border-blue-200 p-5 mb-6">
+          <h2 className="text-base font-semibold text-blue-900 mb-1">
+            Want to attract more patients?
+          </h2>
+          <p className="text-sm text-blue-700 mb-3">
+            Studio Zero helps healthcare providers grow their practice with AI-powered marketing — content, SEO, and visibility that compounds over time.
+          </p>
+          <a
+            href="https://studiozerohq.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-sm font-medium text-blue-700 underline hover:opacity-80"
+          >
+            Learn more at Studio Zero →
+          </a>
+        </div>
+
         <Link href={`/listings/${listing.slug}`} className="btn-primary">
           View Your Listing
         </Link>
