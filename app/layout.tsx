@@ -1,3 +1,4 @@
+import DirectoryActions from '@/components/DirectoryActions'
 import EditorialLink from 'next/link'
 import type { Metadata } from 'next'
 import './globals.css'
@@ -38,6 +39,7 @@ export default function RootLayout({
         <Navbar />
         <main className="min-h-screen">{children}<nav aria-label="Editorial guides" className="mx-auto max-w-7xl px-6 py-6"><EditorialLink href="/blog" className="underline underline-offset-4">Guides and articles</EditorialLink></nav></main>
         <Footer />
+      <DirectoryActions />
       </body>
     </html>
   )

@@ -126,7 +126,7 @@ export default function ListingDetail({ listing }: ListingDetailProps) {
                     <Mail className="w-4 h-4 text-navy-400 flex-shrink-0" aria-label="email"/>
                     {listing.email}
                   </a>)}
-                {listing.website && (<a href={listing.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-navy hover:text-navy-700">
+                {listing.website && (<a data-directory-action="website_click" href={listing.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-navy hover:text-navy-700">
                     <Globe className="w-4 h-4 text-navy-400" aria-label="website"/>
                     Visit Website
                   </a>)}
